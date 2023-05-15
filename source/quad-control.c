@@ -41,6 +41,13 @@
 #include "fsl_debug_console.h"
 /* TODO: insert other include files here. */
 
+#include "i2c_config.h"
+#include "gpio_config.h"
+#include "imu_config.h"
+#include "pwm_config.h"
+#include "test_pwm_config.h"
+#include "test_imu_config.h"
+
 /* TODO: insert other definitions and declarations here. */
 
 /*
@@ -57,16 +64,55 @@ int main(void) {
     BOARD_InitDebugConsole();
 #endif
 
-    PRINTF("Hello World\r\n");
+    /* Initialize SDA and SCL Pins as GPIO for IMU */
+    gpio_init_imu();
 
-    /* Force the counter to be placed into memory. */
-    volatile static int i = 0 ;
-    /* Enter an infinite loop, just incrementing a counter. */
+    /* Initializations for IRQ's, I2C, PWM*/
+    i2c_init();
+
+    /* Test PWM to all four Motors */
+    pwm_init();
+
+    /* Test Functions */
+    test_pwm();
+    test_imu();
+
+    /* Test Print */
+    PRINTF("Welcome to Quad-Control!\r\n");
+    delay(BLINK_DELAY); // slight lag to adjust to terminal output
+
+    /* Main Logic - Read From IMU and Write PWM to Motors */
     while(1) {
-        i++ ;
-        /* 'Dummy' NOP to allow source level single stepping of
-            tight while() loop */
-        __asm volatile ("nop");
+
+        imu_write();
+        imu_read();
+        delay(LAG_DELAY);
+        PRINTF("\r\nRecieved data| ax: %d,ay: %d,az: %d,ax_dot: %d,ay_dot: %d,az_dot: %d\r\n", rx[0], rx[1], rx[2], rx[3], rx[4], rx[5]);
+        /* 
+         * --------- INSERT CONTROL LAW HERE ------------
+         *                                              |
+         *         TO GET IMU MEASUREMENTS USE:         |
+         *                                              |
+         *               - imu_read()                   |
+         *               - imu_clean()                  |
+         *                                              |
+         *    SEE 'rx' buffer for x, y, z, x', y', z'   |
+         *                                              |
+         *      TO SEND PWM SIGNAL TO MOTORS USE:       |
+         *                                              |
+         *  '1,2,3,4' Represent PWM Signal to ea. motor |
+         *                                              |
+         *           - tpm_write(1, 2, 3, 4)            |
+         *                                              |
+         * --------- INSERT CONTROL LAW HERE ------------
+         */
+        
+        /* Write PWM Signal to Motors */
+    	pwm_write(PWM_TEST_VAL, PWM_TEST_VAL, PWM_TEST_VAL, PWM_TEST_VAL);
+        delay(LAG_DELAY);
+        PRINTF("\r\nCurrent Motor PWM Values: M1: %d, M2: %d, M3: %d, M4: %d\r\n", TPM0->CONTROLS[0].CnV, TPM0->CONTROLS[1].CnV, TPM2->CONTROLS[0].CnV, TPM2->CONTROLS[1].CnV);
+
     }
+
     return 0 ;
 }
