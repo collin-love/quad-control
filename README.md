@@ -85,4 +85,4 @@ Below is a screenshot of an example terminal output for this program, you will s
 
 ## To download the repo
 
-    -- git clone "https://github.com/ECEN5813/final-project-collin-love"
+    -- git clone "https://github.com/collin-love/quad-control"
